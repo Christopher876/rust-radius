@@ -65,3 +65,4 @@ pub trait SyncServerTrait {
 }
 
 pub mod server;
+pub mod secret_provider;
