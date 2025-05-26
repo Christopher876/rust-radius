@@ -1,6 +1,6 @@
 //! RADIUS Dictionary implementation
 
-
+use std::collections::HashMap;
 use std::fs::File;
 use std::io::{self, BufRead};
 
@@ -116,11 +116,12 @@ pub struct DictionaryVendor {
 
 
 const COMMENT_PREFIX: &str = "#";
+type DictionaryAttributes = HashMap<u8, DictionaryAttribute>;
 
 #[derive(Debug, Default, PartialEq)]
 /// Represents RADIUS dictionary
 pub struct Dictionary {
-    attributes: Vec<DictionaryAttribute>,
+    attributes: DictionaryAttributes,
     values:     Vec<DictionaryValue>,
     vendors:    Vec<DictionaryVendor>
 }
@@ -160,7 +161,7 @@ impl Dictionary {
     }
 
     /// Returns parsed DictionaryAttributes
-    pub fn attributes(&self) -> &[DictionaryAttribute] {
+    pub fn attributes(&self) -> &DictionaryAttributes {
         &self.attributes
     }
 
@@ -175,7 +176,7 @@ impl Dictionary {
     }
 
     fn from_lines(lines: StringIterator) -> Result<Dictionary, RadiusError> {
-        let mut attributes:  Vec<DictionaryAttribute> = Vec::new();
+        let mut attributes:  HashMap<u8, DictionaryAttribute> = HashMap::new();
         let mut values:      Vec<DictionaryValue>     = Vec::new();
         let mut vendors:     Vec<DictionaryVendor>    = Vec::new();
 
@@ -230,7 +231,7 @@ fn read_str(dictionary_str: &str) -> StringIterator {
     filter_lines(lines.into_iter())
 }
 
-fn parse_lines(lines: StringIterator, attributes: &mut Vec<DictionaryAttribute>, values: &mut Vec<DictionaryValue>, vendors: &mut Vec<DictionaryVendor>) -> Result<(), RadiusError>{
+fn parse_lines(lines: StringIterator, attributes: &mut DictionaryAttributes, values: &mut Vec<DictionaryValue>, vendors: &mut Vec<DictionaryVendor>) -> Result<(), RadiusError>{
     let mut vendor_name: String = String::new();
 
     for line in lines {
@@ -248,14 +249,17 @@ fn parse_lines(lines: StringIterator, attributes: &mut Vec<DictionaryAttribute>,
     Ok(())
 }
 
-fn parse_attribute(parsed_line: Vec<&str>, vendor_name: &str, attributes: &mut Vec<DictionaryAttribute>) {
+// TODO: This needs to support VSA attributes i.e. 26 which needs a different hashmap
+fn parse_attribute(parsed_line: Vec<&str>, vendor_name: &str, attributes: &mut DictionaryAttributes) {
     if let Ok(code) = parsed_line[2].parse::<u8>() {
-        attributes.push(DictionaryAttribute {
-            name:        parsed_line[1].to_string(),
-            vendor_name: vendor_name.to_string(),
-            code,
-            code_type:   assign_attribute_type(parsed_line[3])
-        });
+        attributes.insert(
+            code, DictionaryAttribute {
+                name:        parsed_line[1].to_string(),
+                vendor_name: vendor_name.to_string(),
+                code,
+                code_type:   assign_attribute_type(parsed_line[3])
+            }
+        );
     }
 }
 

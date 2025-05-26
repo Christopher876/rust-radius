@@ -83,13 +83,18 @@ impl Host{
 
     /// Returns ATTRIBUTE from dictionary with given id
     pub fn dictionary_attribute_by_id(&self, packet_attr_id: u8) -> Option<&DictionaryAttribute> {
-        self.dictionary.attributes().iter().find(|&attr| attr.code() == packet_attr_id)
+        self.dictionary.attributes().get(&packet_attr_id)
     }
 
     #[allow(dead_code)]
     /// Returns ATTRIBUTE from dictionary with given name
     pub fn dictionary_attribute_by_name(&self, packet_attr_name: &str) -> Option<&DictionaryAttribute> {
-        self.dictionary.attributes().iter().find(|&attr| attr.name() == packet_attr_name)
+        for (_id, _dict_attr) in self.dictionary.attributes() {
+            if _dict_attr.name() == packet_attr_name {
+                return Some(_dict_attr);
+            }
+        }
+        None
     }
 
     /// Initialises RadiusPacket from bytes
